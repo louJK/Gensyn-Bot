@@ -1,239 +1,178 @@
-# 🤖 Gensyn 节点监控机器人
+# 🤖 Gensyn Node Monitor Bot
 
-这是一个用于监控 Gensyn 节点状态的 Telegram 机器人，支持在 Telegram 中发送命令查询节点的 Reward、Score 和在线状态变化。
+Đây là một Telegram Bot giúp bạn theo dõi trạng thái các **Gensyn Node**, bao gồm Reward, Score, tình trạng Online và các thay đổi theo thời gian.
 
-## ✨ 功能特点
+---
 
-- 🔍 Telegram 命令查询节点状态
-- 📊 追踪 Reward 和 Score 变化
-- 🟢🔴 在线状态监控
-- 📱 紧凑的 Telegram 消息格式
-- 📈 自动变化检测和播报
-- 💾 历史数据记录
+## ✨ Tính năng nổi bật
+- 🔍 Tra cứu trạng thái node qua lệnh Telegram  
+- 📊 Theo dõi thay đổi Reward và Score  
+- 🟢🔴 Kiểm tra trạng thái Online/Offline  
+- 📈 Tự động phát hiện thay đổi và gửi cảnh báo  
+- 💾 Lưu trữ dữ liệu lịch sử node  
+- 🔧 Dễ cấu hình và dễ triển khai  
 
-## 📋 系统要求
+---
 
-- Python 3.7+
-- 网络连接
-- Telegram 账号
+## 📋 Yêu cầu hệ thống
+- Python 3.7 trở lên  
+- Kết nối mạng  
+- Tài khoản Telegram  
 
-## 🚀 快速开始
+---
 
-### 1. 创建 Telegram Bot
+## 🚀 Bắt đầu nhanh
 
-#### 步骤 1: 创建 Bot
-1. 在 Telegram 中搜索 `@BotFather`
-2. 发送 `/newbot` 命令
-3. 按照提示设置机器人名称（例如：Gensyn Monitor）
-4. 设置机器人用户名（必须以 'bot' 结尾，例如：gensyn_monitor_bot）
-5. 保存获得的 Bot Token（格式：`123456789:ABCdefGHIjklMNOpqrsTUVwxyz`）
+### 1. Tạo Telegram Bot
 
-#### 步骤 2: 获取 Chat ID
-1. 与你的机器人对话，发送 `/start`
-2. 访问以下链接（替换 `<YOUR_BOT_TOKEN>` 为你的 Bot Token）：
+#### Bước 1 — Tạo Bot
+1. Mở Telegram, tìm **@BotFather**  
+2. Gõ `/newbot`  
+3. Đặt tên bot (VD: *Gensyn Monitor*)  
+4. Đặt username bot (kết thúc bằng `bot`, ví dụ: `gensyn_monitor_bot`)  
+5. Lấy **Bot Token**
+
+#### Bước 2 — Lấy Chat ID
+1. Nhắn `/start` cho bot vừa tạo  
+2. Truy cập:
    ```
    https://api.telegram.org/bot<YOUR_BOT_TOKEN>/getUpdates
    ```
-3. 在返回的 JSON 中找到 `"chat" -> "id"` 字段的值
-4. 保存这个 Chat ID
+3. Tìm trường `"chat" -> "id"`  
+4. Đây là **Chat ID** của bạn  
 
-### 2. 运行设置脚本
+---
+
+## 2. Chạy script thiết lập
+
 ```bash
 python setup.py
 ```
 
-按提示输入：
-- **Bot Token**: 从 BotFather 获得的 Token
-- **Chat ID**: 你的聊天 ID
-- **节点信息**: 支持两种格式
+Nhập theo hướng dẫn:
+- **Bot Token**
+- **Chat ID**
+- **Thông tin Node** (ID hoặc name tuỳ cách dùng)
 
-#### 节点配置格式
+### ⚙️ Định dạng cấu hình Node
 
-**格式1 - 简单名称（兼容旧版本）:**
+#### Cách 1 — Tên node (cũ):
 ```
 loud sleek bat, knobby leaping kangaroo
 ```
 
-**格式2 - 详细信息（推荐，更准确）:**
+#### Cách 2 — ID node + Ghi chú (khuyến nghị):
 ```
-Qmb14s2Es99SDQ6Fh6kkZkM6359raDgBLdjcYoSk3nxxv7,服务器A
-QmPboLHehSK3TJYkDskwDW4tFqhJDne8xLiKTiEARMuavj,服务器B
+Qmb14s2E...x3nxxv7,Server A
+QmPboLHe...EARMuavj,Server B
 ```
 
-**格式说明：**
-- 第一列：节点ID（Peer ID）- 用于准确查询在线状态
-- 第二列：备注信息 - 用于标识对应的服务器
+📌 *Sử dụng Peer ID để theo dõi chính xác hơn!*
 
-**为什么使用ID查询更准确？**
-- 使用 `name` 参数查询可能返回不准确的结果
-- 使用 `id` 参数查询能获得最准确的节点状态
-- 建议优先使用ID进行配置
+---
 
-### 3. 启动机器人
+## 3. Khởi động bot
+
 ```bash
 python main.py
 ```
 
-### 4. 在 Telegram 中使用
+---
 
-启动机器人后，在 Telegram 中与你的机器人对话：
+## 🧩 Các lệnh Telegram
 
-- `/start` - 启动机器人，显示欢迎信息
-- `/status` - 查询所有节点状态
-- `/help` - 显示帮助信息
+| Lệnh | Mô tả |
+|------|-------|
+| `/start` | Hiển thị lời chào |
+| `/status` | Lấy toàn bộ trạng thái node |
+| `/help` | Hiển thị hướng dẫn |
 
-## 📱 消息格式
+---
 
-机器人会发送紧凑格式的状态消息：
+## 📱 Ví dụ tin nhắn bot gửi
 
 ```
-📊 Gensyn Nodes Status (14:30:25)
+📊 Trạng thái Node (14:30:25)
 
 1 🟢 loud sleek bat
-R:78 | S:216 | ID:QmQR1emZtMW... | R:75→78(+3) | S:210→216(+6)
+R:78 | S:216 | ID:QmQR1...MW | R:75→78(+3) | S:210→216(+6)
 
 2 🔴 knobby leaping kangaroo  
-R:45 | S:120 | ID:QmX5RDyKC4s... | 🔴离线
+R:45 | S:120 | ID:QmX5R...KC | 🔴 Mới offline
 ```
 
-### 消息说明：
-- `1` - 节点编号
-- `🟢/🔴` - 在线状态（绿色=在线，红色=离线）
-- `loud sleek bat` - 节点名称
-- `R:78` - Reward 值
-- `S:216` - Score 值
-- `ID:QmQR1emZtMW...` - Peer ID 前12位
-- `R:75→78(+3)` - Reward 变化（从75增加到78，+3）
-- `S:210→216(+6)` - Score 变化
-- `🔴离线` - 状态变化提醒
+---
 
-## ⚙️ 配置说明
+## 📁 Cấu trúc file cấu hình
 
-### 配置文件
-配置信息保存在 `config.json` 文件中：
-
-#### 旧格式（兼容）:
+### Cấu hình mới:
 ```json
 {
-    "TELEGRAM_API_TOKEN": "your_bot_token_here",
-    "CHAT_ID": "your_chat_id_here",
-    "PEER_NAMES": ["loud sleek bat", "knobby leaping kangaroo"]
-}
-```
-
-#### 新格式（推荐）:
-```json
-{
-    "TELEGRAM_API_TOKEN": "your_bot_token_here",
-    "CHAT_ID": "your_chat_id_here",
+    "TELEGRAM_API_TOKEN": "",
+    "CHAT_ID": "",
     "PEER_NAMES": [
         {
-            "id": "Qmb14s2Es99SDQ6Fh6kkZkM6359raDgBLdjcYoSk3nxxv7",
-            "remark": "服务器A"
-        },
-        {
-            "id": "QmPboLHehSK3TJYkDskwDW4tFqhJDne8xLiKTiEARMuavj",
-            "remark": "服务器B"
+            "id": "Qmxxxx",
+            "remark": "Server A"
         }
     ]
 }
 ```
 
-### 添加更多节点
-编辑 `config.json` 文件，在 `PEER_NAMES` 数组中添加节点名称：
-
+### Cấu hình cũ:
 ```json
-"PEER_NAMES": [
-    "loud sleek bat",
-    "knobby leaping kangaroo",
-    "sly fast tiger",
-    "blue quiet elephant"
-]
+{
+    "PEER_NAMES": ["loud sleek bat"]
+}
 ```
 
-## 🛠️ 故障排除
+---
 
-### 常见问题
+## 🛠️ Xử lý lỗi
 
-#### 1. Telegram 连接失败
-- 检查 Bot Token 是否正确
-- 确认 Chat ID 是否正确
-- 确保机器人没有被阻止
-
-#### 2. 机器人无响应
-- 确保机器人正在运行（`python main.py`）
-- 检查网络连接
-- 确认 Bot Token 有效
-
-#### 3. 节点数据获取失败
-- 检查网络连接
-- 确认节点名称是否正确
-- 检查 Gensyn 仪表板是否可访问
-
-#### 4. json文件损坏
+### Node không đọc được JSON
 ```
-Traceback (most recent call last):
-  File "/root/GENSYNBOT/main.py", line 11, in <module>
-    task_manager = NodeTaskManager()
-  File "/root/GENSYNBOT/node_tasks.py", line 10, in __init__
-    self.load_tasks()
-  File "/root/GENSYNBOT/node_tasks.py", line 15, in load_tasks
-    data = json.load(f)
-  File "/usr/lib/python3.10/json/__init__.py", line 293, in load
-    return loads(fp.read(),
-  File "/usr/lib/python3.10/json/__init__.py", line 346, in loads
-    return _default_decoder.decode(s)
-  File "/usr/lib/python3.10/json/decoder.py", line 337, in decode
-    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
-  File "/usr/lib/python3.10/json/decoder.py", line 353, in raw_decode
-    obj, end = self.scan_once(s, idx)
-json.decoder.JSONDecodeError: Expecting ',' delimiter: line 8454 column 11 (char 266240)
+json.decoder.JSONDecodeError
 ```
-- 使用该指令删除以下文件即可：
+👉 Fix:
+```bash
 rm -f /root/GENSYNBOT/node_tasks.json
-
-### 调试模式
-运行测试脚本来验证 API 连接：
-
-```bash
-python test_simple.py
 ```
 
-## 📊 数据存储
+### Bot không phản hồi
+- Kiểm tra bot có đang chạy không  
+- Kiểm tra mạng  
+- Kiểm tra Chat ID & Token  
 
-### 数据文件
-- `node_tasks.json` - 节点统计数据
-- `config.json` - 配置文件
+---
 
-## 🔄 使用方法
-
-1. 运行 `python main.py` 启动机器人
-2. 在 Telegram 中与机器人对话
-3. 发送 `/status` 命令查询节点状态
-4. 机器人会返回当前状态和变化信息
-
-## 🚀 部署建议
-
-### 本地运行
+## ⏱️ Chạy bot nền (khuyến nghị)
+### Dùng screen
 ```bash
-python main.py
-```
-
-### 服务器运行
-```bash
-# 使用 screen 或 tmux 保持运行
 screen -S gensyn_bot
 python main.py
-# Ctrl+A+D 分离会话
+# nhấn Ctrl+A rồi D để tách
 ```
 
-### 后台运行
+### Dùng nohup
 ```bash
 nohup python main.py > bot.log 2>&1 &
 ```
 
 ---
 
+## 📦 File dữ liệu
+| File | Mô tả |
+|------|--------|
+| `config.json` | Cấu hình bot |
+| `node_tasks.json` | Lưu lịch sử Reward/Score/Online |
 
-**注意**: 请确保你的 Bot Token 和 Chat ID 安全，不要分享给他人。 
+---
 
+## ❤️ Ghi chú
+- Luôn bảo vệ Bot Token và Chat ID  
+- Khi node quá nhiều, nên dùng Peer ID để tăng độ chính xác  
+
+---
+
+Chúc bạn giám sát node **Gensyn** hiệu quả! ⚡
