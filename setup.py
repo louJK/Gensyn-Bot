@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Gensyn 节点监控机器人快速设置脚本
+Trình cài đặt nhanh - Bot giám sát Gensyn Node
 """
 
 import os
@@ -9,38 +9,38 @@ import json
 import subprocess
 
 def print_banner():
-    """打印欢迎横幅"""
+    """In banner mở đầu"""
     print("🤖" + "="*50 + "🤖")
-    print("    Gensyn 节点监控机器人 - 快速设置")
+    print("    Bot Giám Sát Gensyn Node - Cài Đặt Nhanh")
     print("🤖" + "="*50 + "🤖")
 
 def print_telegram_guide():
-    """打印 Telegram 设置指南"""
-    print("\n📱 请先按照 README.md 中的说明创建 Telegram Bot")
-    print("   获取 Bot Token 和 Chat ID 后再继续")
+    """Hướng dẫn tạo Telegram Bot"""
+    print("\n📱 Vui lòng tạo Telegram Bot theo hướng dẫn trong README.md")
+    print("   Sau khi có Bot Token và Chat ID hãy quay lại bước này.")
 
 def get_telegram_config():
-    """获取 Telegram 配置"""
-    print("\n🔧 配置 Telegram Bot")
+    """Lấy cấu hình Telegram từ người dùng"""
+    print("\n🔧 Cấu hình Telegram Bot")
     print("-" * 30)
     
     config = {}
-    config["TELEGRAM_API_TOKEN"] = input("请输入 Bot Token: ").strip()
-    config["CHAT_ID"] = input("请输入 Chat ID: ").strip()
+    config["TELEGRAM_API_TOKEN"] = input("Nhập Bot Token: ").strip()
+    config["CHAT_ID"] = input("Nhập Chat ID của bạn: ").strip()
     return config
 
 def get_monitoring_config():
-    """获取监控配置"""
-    print("\n📊 配置监控参数")
+    """Lấy danh sách node cần theo dõi"""
+    print("\n📊 Cấu hình danh sách Node giám sát")
     print("-" * 30)
     
-    print("请输入节点信息（支持两种格式）：")
-    print("格式1 - 简单名称: loud sleek bat")
-    print("格式2 - 详细信息: id,备注")
-    print("示例: Qmb14s2Es99SDQ6Fh6kkZkM6359raDgBLdjcYoSk3nxxv7,服务器A")
-    print("用逗号分隔多个节点")
+    print("Nhập thông tin node (hỗ trợ 2 dạng):")
+    print("Dạng 1 - Tên node đơn giản: loud sleek bat")
+    print("Dạng 2 - ID + ghi chú: id,ghi_chu")
+    print("Ví dụ: Qmb14s2Es99SDQ...,Server A")
+    print("⚠️ Dùng dấu phẩy để phân tách nhiều mục.")
     
-    nodes_input = input("节点信息: ").strip()
+    nodes_input = input("Nhập danh sách node: ").strip()
     nodes = [node.strip() for node in nodes_input.split(",") if node.strip()]
     
     config = {}
@@ -48,7 +48,7 @@ def get_monitoring_config():
     
     for i in range(0, len(nodes), 2):
         if i + 1 < len(nodes):
-            # 完整信息：id, remark
+            # Có dạng id + remark
             peer_id = nodes[i]
             remark = nodes[i + 1]
             peer_names.append({
@@ -56,51 +56,49 @@ def get_monitoring_config():
                 "remark": remark
             })
         else:
-            # 只有名称（兼容旧格式）
+            # Chỉ có tên node (dạng cũ)
             peer_names.append(nodes[i])
     
     config["PEER_NAMES"] = peer_names
-    
     return config
 
 def save_config(config):
-    """保存配置"""
+    """Lưu cấu hình vào file"""
     with open("config.json", "w") as f:
         json.dump(config, f, indent=4)
-    print(f"✅ 配置已保存到 config.json")
+    print("✅ Đã lưu cấu hình vào config.json")
 
 def main():
     print_banner()
     
-    # 检查 Python 版本
+    # Kiểm tra Python
     if sys.version_info < (3, 7):
-        print("❌ 需要 Python 3.7 或更高版本")
+        print("❌ Cần Python 3.7 trở lên")
         sys.exit(1)
     
-    # 检查依赖
+    # Kiểm tra dependency
     try:
         import requests
     except ImportError:
-        print("📦 安装依赖...")
+        print("📦 Đang cài đặt gói phụ thuộc...")
         subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"])
     
-    # 显示设置指南
     print_telegram_guide()
     
-    # 获取配置
+    # Lấy cấu hình
     telegram_config = get_telegram_config()
     monitoring_config = get_monitoring_config()
     
-    # 合并配置
+    # Gộp lại
     config = {**telegram_config, **monitoring_config}
     
-    # 保存配置
+    # Lưu file
     save_config(config)
     
-    print("\n🎉 设置完成！")
-    print("\n下一步：")
-    print("运行: python main.py")
-    print("然后按回车键查询节点状态")
+    print("\n🎉 Cài đặt hoàn tất!")
+    print("\nTiếp theo:")
+    print("➡️  Chạy: python main.py")
+    print("➡️  Sau đó nhập lệnh /status trong Telegram để xem node")
 
 if __name__ == "__main__":
-    main() 
+    main()
