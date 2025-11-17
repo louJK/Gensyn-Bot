@@ -7,17 +7,18 @@ from node_tasks import NodeTaskManager
 
 CONFIG_FILE = "config.json"
 
-# 初始化任务管理器
+# Khởi tạo bộ quản lý thống kê node
 task_manager = NodeTaskManager()
 
 def load_config():
     if not os.path.exists(CONFIG_FILE):
-        print("❌ 配置文件不存在，请先运行 python setup.py")
+        print("❌ Không tìm thấy file cấu hình. Vui lòng chạy: python setup.py")
         return None
     with open(CONFIG_FILE, "r") as f:
         return json.load(f)
 
 def send_telegram_message(token, chat_id, message: str):
+    """Gửi tin nhắn Telegram"""
     url = f"https://api.telegram.org/bot{token}/sendMessage"
     payload = {
         "chat_id": chat_id,
@@ -28,21 +29,21 @@ def send_telegram_message(token, chat_id, message: str):
     return requests.post(url, json=payload)
 
 def fetch_peer_data(peer_info):
-    """获取节点数据，支持id和remark配置"""
+    """Lấy thông tin node — hỗ trợ cấu hình theo ID hoặc theo tên cũ"""
     if isinstance(peer_info, dict):
-        # 新的配置格式：包含id和备注
+        # Định dạng mới: { "id": "...", "remark": "Server A" }
         peer_id = peer_info.get("id")
         remark = peer_info.get("remark", "")
     else:
-        # 兼容旧格式：只有名称
+        # Tương thích định dạng cũ: chỉ có tên node
         peer_id = None
         remark = ""
-    
-    # 优先使用id查询，如果没有id则使用name查询（兼容旧格式）
+
+    # Ưu tiên truy vấn bằng ID
     if peer_id:
         url = f"https://dashboard.gensyn.ai/api/v1/peer?id={peer_id}"
     else:
-        # 兼容旧格式：使用名称查询
+        # Tương thích bản cũ (query theo tên)
         url_name = peer_info.replace(" ", "%20")
         url = f"https://dashboard.gensyn.ai/api/v1/peer?name={url_name}"
     
@@ -50,79 +51,80 @@ def fetch_peer_data(peer_info):
         response = requests.get(url)
         if response.ok:
             data = response.json()
-            # 如果使用name查询，需要更新peer_id
+
+            # Nếu query bằng tên, cập nhật peer_id
             if not peer_id and "peerId" in data:
                 peer_id = data["peerId"]
-            
+
             task_manager.update_node_stats(
-                peer_id, 
-                data.get("reward", 0), 
-                data.get("score", 0), 
+                peer_id,
+                data.get("reward", 0),
+                data.get("score", 0),
                 data.get("online", False)
             )
-            
-            # 添加备注信息到返回数据
+
+            # Thêm ghi chú hiển thị
             data["_remark"] = remark
             return data
+
     except Exception as e:
-        print(f"获取节点数据失败: {str(e)}")
+        print(f"❌ Lỗi lấy dữ liệu node: {str(e)}")
+    
     return None
 
 def format_node_status(info, peerno, previous_data=None):
+    """Tạo định dạng thông báo node"""
     peer_id = info["peerId"]
     reward = info.get("reward", 0)
     score = info.get("score", 0)
     online = info.get("online", False)
     remark = info.get("_remark", "")
-    
-    # 获取统计数据变化
+
     stats_changes = task_manager.get_stats_change(peer_id)
-    
     changes = []
+
+    # So sánh với dữ liệu trước đó
     if previous_data:
         prev_reward = previous_data.get("reward", 0)
         prev_score = previous_data.get("score", 0)
         prev_online = previous_data.get("online", False)
-        
+
         if reward != prev_reward:
             change = reward - prev_reward
             changes.append(f"R:{prev_reward}→{reward}({change:+.0f})")
-        
+
         if score != prev_score:
             change = score - prev_score
             changes.append(f"S:{prev_score}→{score}({change:+.0f})")
-        
+
         if online != prev_online:
-            status_change = "🟢上线" if online else "🔴离线"
-            changes.append(status_change)
+            changes.append("🟢 Online" if online else "🔴 Offline")
 
     status_icon = "🟢" if online else "🔴"
     change_text = " | " + " | ".join(changes) if changes else ""
-    
-    # 构建显示名称：如果有备注则显示备注，否则显示peer_id前12位
+
+    # Hiển thị tên: ưu tiên remark, nếu không có thì hiển thị ID rút gọn
     display_name = remark if remark else f"Node_{peer_id[:12]}"
-    
+
     msg = f"<b>{peerno}</b> {status_icon} <code>{display_name}</code>\n"
     msg += f"R:{reward} | S:{score} | ID:{peer_id[:12]}...{change_text}"
-    
-    # 添加统计数据趋势
+
+    # Thêm phần thống kê xu hướng
     if stats_changes:
-        msg += "\n📊 趋势: "
+        msg += "\n📊 Xu hướng: "
         trend_parts = []
         if 'reward' in stats_changes:
-            r_change = stats_changes['reward']
-            trend_parts.append(f"R:{r_change['change']:+.0f}")
+            trend_parts.append(f"R:{stats_changes['reward']['change']:+.0f}")
         if 'score' in stats_changes:
-            s_change = stats_changes['score']
-            trend_parts.append(f"S:{s_change['change']:+.0f}")
+            trend_parts.append(f"S:{stats_changes['score']['change']:+.0f}")
         if 'online' in stats_changes:
-            o_change = stats_changes['online']
-            trend_parts.append("🟢上线" if o_change['current'] else "🔴离线")
+            trend_parts.append("🟢 Online" if stats_changes['online']['current'] else "🔴 Offline")
         msg += " | ".join(trend_parts)
+
     return msg
 
 def query_nodes_status(config, chat_id):
-    """查询所有节点状态"""
+    """Kiểm tra trạng thái tất cả node"""
     try:
         messages = []
         current_data = {}
@@ -133,76 +135,78 @@ def query_nodes_status(config, chat_id):
                 current_data[data["peerId"]] = data
 
         for i, (peer_id, info) in enumerate(current_data.items(), 1):
-            msg = format_node_status(info, i)
-            messages.append(msg)
+            messages.append(format_node_status(info, i))
 
         timestamp = datetime.now().strftime("%H:%M:%S")
-        full_message = f"<b>📊 Gensyn Nodes Status ({timestamp})</b>\n\n"
+        full_message = f"<b>📊 Trạng thái Node Gensyn ({timestamp})</b>\n\n"
         full_message += "\n".join(messages)
 
         response = send_telegram_message(config["TELEGRAM_API_TOKEN"], chat_id, full_message)
-        
+
         if not response.ok:
-            send_telegram_message(config["TELEGRAM_API_TOKEN"], chat_id, "❌ 查询失败，请稍后重试")
-            
+            send_telegram_message(config["TELEGRAM_API_TOKEN"], chat_id, "❌ Lỗi truy vấn. Vui lòng thử lại.")
+
     except Exception as e:
-        send_telegram_message(config["TELEGRAM_API_TOKEN"], chat_id, f"❌ 查询失败: {str(e)}")
+        send_telegram_message(config["TELEGRAM_API_TOKEN"], chat_id, f"❌ Lỗi truy vấn: {str(e)}")
 
 def get_updates(config, offset=None):
-    """获取Telegram更新"""
+    """Nhận cập nhật từ Telegram"""
     url = f"https://api.telegram.org/bot{config['TELEGRAM_API_TOKEN']}/getUpdates"
     params = {"timeout": 30}
     if offset:
         params["offset"] = offset
-    
+
     try:
         response = requests.get(url, params=params, timeout=35)
         if response.ok:
             return response.json()
     except Exception as e:
-        print(f"获取更新失败: {str(e)}")
+        print(f"❌ Lỗi lấy cập nhật Telegram: {str(e)}")
+
     return None
 
 def process_message(config, message):
-    """处理消息"""
+    """Xử lý tin nhắn từ Telegram"""
     chat_id = message['chat']['id']
     text = message.get('text', '').strip()
-    
-    # 检查是否是授权用户
+
+    # Chỉ cho phép Chat ID đã cấu hình
     if str(chat_id) != config["CHAT_ID"]:
         return
-    
+
     if text == '/start':
-        welcome_msg = """🤖 <b>Gensyn 节点监控机器人</b>
+        welcome_msg = """🤖 <b>Bot Giám Sát Node Gensyn</b>
 
-可用命令：
-/status - 查询所有节点状态
-/help - 显示帮助信息
+Các lệnh khả dụng:
+/status - Xem trạng thái toàn bộ node
+/help - Hướng dẫn sử dụng
 
-机器人会显示节点的 Reward、Score 和在线状态变化。"""
+Bot sẽ hiển thị Reward, Score và trạng thái Online/Offline của node.
+"""
         send_telegram_message(config["TELEGRAM_API_TOKEN"], chat_id, welcome_msg)
-    
+
     elif text == '/status':
-        send_telegram_message(config["TELEGRAM_API_TOKEN"], chat_id, "🔄 正在查询节点状态...")
+        send_telegram_message(config["TELEGRAM_API_TOKEN"], chat_id, "⏳ Đang lấy dữ liệu node...")
         query_nodes_status(config, chat_id)
-    
+
     elif text == '/help':
-        help_msg = """📖 <b>帮助信息</b>
+        help_msg = """📘 <b>Hướng dẫn</b>
 
-<b>命令列表：</b>
-/start - 启动机器人
-/status - 查询所有节点状态
-/help - 显示此帮助信息
+<b>Các lệnh:</b>
+• /start - Khởi động bot
+• /status - Kiểm tra tất cả node
+• /help - Xem hướng dẫn
 
-<b>状态说明：</b>
-🟢 - 节点在线
-🔴 - 节点离线
-R: - Reward 值
-S: - Score 值
-ID: - Peer ID（前12位）
+<b>Ý nghĩa trạng thái:</b>
+🟢 Online
+🔴 Offline
+R: Reward
+S: Score
+ID: Peer ID (12 ký tự đầu)
 
-<b>变化检测：</b>
-机器人会自动检测并显示 Reward、Score 和在线状态的变化。"""
+<b>Phát hiện thay đổi:</b>
+Bot sẽ tự động hiển thị thay đổi Reward, Score và trạng thái Online/Offline.
+"""
         send_telegram_message(config["TELEGRAM_API_TOKEN"], chat_id, help_msg)
 
 def main():
@@ -210,14 +214,14 @@ def main():
     if not config:
         return
 
-    print("🤖 Gensyn 节点监控机器人 - Telegram Bot 模式")
-    print("机器人已启动，请在 Telegram 中发送命令：")
-    print("- /start - 启动机器人")
-    print("- /status - 查询节点状态")
-    print("- /help - 显示帮助")
-    
+    print("🤖 Bot Giám Sát Node Gensyn – Chế độ Telegram")
+    print("Bot đã khởi động. Gửi lệnh từ Telegram:")
+    print("- /start - Khởi động bot")
+    print("- /status - Xem trạng thái node")
+    print("- /help - Hướng dẫn")
+
     offset = None
-    
+
     while True:
         try:
             updates = get_updates(config, offset)
@@ -226,15 +230,15 @@ def main():
                     if 'message' in update:
                         process_message(config, update['message'])
                     offset = update['update_id'] + 1
-            
-            time.sleep(1)  # 避免过于频繁的请求
-            
+
+            time.sleep(1)
+
         except KeyboardInterrupt:
-            print("\n👋 机器人已停止")
+            print("\n👋 Đã dừng bot.")
             break
         except Exception as e:
-            print(f"❌ 错误: {str(e)}")
-            time.sleep(5)  # 出错时等待更长时间
+            print(f"❌ Lỗi: {str(e)}")
+            time.sleep(5)  # Tránh spam khi lỗi
 
 if __name__ == "__main__":
     main()
