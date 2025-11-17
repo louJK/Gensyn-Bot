@@ -6,16 +6,18 @@ from typing import Dict, Optional
 class NodeTaskManager:
     def __init__(self, data_file: str = "node_tasks.json"):
         self.data_file = data_file
-        self.node_stats: Dict[str, Dict] = {}  # 存储节点统计数据
+        self.node_stats: Dict[str, Dict] = {}  # Lưu thống kê của từng node
         self.load_tasks()
 
     def load_tasks(self):
+        """Tải dữ liệu thống kê từ file"""
         if os.path.exists(self.data_file):
             with open(self.data_file, 'r') as f:
                 data = json.load(f)
                 self.node_stats = data.get("node_stats", {})
 
     def save_tasks(self):
+        """Lưu thống kê node xuống file"""
         data = {
             "node_stats": self.node_stats
         }
@@ -23,9 +25,10 @@ class NodeTaskManager:
             json.dump(data, f, indent=4)
 
     def update_node_stats(self, node_address: str, reward: int, score: int, online: bool):
-        """更新节点统计数据"""
+        """Cập nhật dữ liệu thống kê của node"""
         current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         
+        # Nếu node chưa có dữ liệu → tạo mới
         if node_address not in self.node_stats:
             self.node_stats[node_address] = {
                 'reward': [],
@@ -34,7 +37,7 @@ class NodeTaskManager:
                 'last_update': current_time
             }
         
-        # 添加新的数据点
+        # Thêm dữ liệu mới
         self.node_stats[node_address]['reward'].append({
             'value': reward,
             'timestamp': current_time
@@ -48,7 +51,7 @@ class NodeTaskManager:
             'timestamp': current_time
         })
         
-        # 只保留最近50个数据点
+        # Giới hạn chỉ giữ tối đa 50 điểm dữ liệu
         if len(self.node_stats[node_address]['reward']) > 50:
             self.node_stats[node_address]['reward'] = self.node_stats[node_address]['reward'][-50:]
         if len(self.node_stats[node_address]['score']) > 50:
@@ -60,12 +63,12 @@ class NodeTaskManager:
         self.save_tasks()
 
     def get_stats_change(self, node_address: str) -> Dict:
-        """获取统计数据的变化"""
+        """Lấy sự thay đổi thống kê gần nhất của node"""
         if node_address in self.node_stats:
             stats = self.node_stats[node_address]
             changes = {}
             
-            # 计算 Reward 变化
+            # Thay đổi Reward
             if len(stats['reward']) >= 2:
                 current_reward = stats['reward'][-1]['value']
                 previous_reward = stats['reward'][-2]['value']
@@ -75,7 +78,7 @@ class NodeTaskManager:
                     'change': current_reward - previous_reward
                 }
             
-            # 计算 Score 变化
+            # Thay đổi Score
             if len(stats['score']) >= 2:
                 current_score = stats['score'][-1]['value']
                 previous_score = stats['score'][-2]['value']
@@ -85,7 +88,7 @@ class NodeTaskManager:
                     'change': current_score - previous_score
                 }
             
-            # 检查在线状态变化
+            # Thay đổi trạng thái online/offline
             if len(stats['online']) >= 2:
                 current_online = stats['online'][-1]['value']
                 previous_online = stats['online'][-2]['value']
@@ -99,7 +102,7 @@ class NodeTaskManager:
         return {}
 
     def get_last_update_time(self, node_address: str) -> Optional[str]:
-        """获取最后更新时间"""
+        """Lấy thời gian cập nhật cuối của node"""
         if node_address in self.node_stats:
             return self.node_stats[node_address].get('last_update')
-        return None 
+        return None
